@@ -33,6 +33,13 @@
 /* ---------- Reset & base ---------- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
+
+/* The HTML `hidden` attribute should always win over author display rules.
+   Without !important here, .modal-overlay { display:flex } ties on specificity
+   with the user-agent's [hidden]{display:none} and (because author > UA on tie)
+   our rule wins → element stays visible even when hidden=true. This breaks
+   the Hall of Fame modal close + stats strip toggling. */
+[hidden] { display: none !important; }
 body {
   font-family: 'Fredoka', system-ui, sans-serif;
   font-weight: 500;
@@ -457,12 +464,16 @@ body[data-state="practice"] .show-on-practice {
   display: inline-flex;
 }
 body[data-state="practice"] .playback-grid.show-on-practice { display: grid; }
+body[data-state="practice"] .speed-bar.show-on-practice { display: flex; }
 
 body[data-state="recording-reversed"] .show-on-recording-reversed { display: inline-flex; }
 body[data-state="processing-reversed"] .show-on-processing-reversed { display: flex; }
 
 body[data-state="compare"] .show-on-compare { display: inline-flex; }
-body[data-state="compare"] .compare-grid.show-on-compare { display: flex; }
+body[data-state="compare"] .compare-grid.show-on-compare    { display: flex; }
+body[data-state="compare"] .speed-bar.show-on-compare       { display: flex; }
+body[data-state="compare"] .score-reveal.show-on-compare    { display: flex; }
+body[data-state="compare"] .compare-actions.show-on-compare { display: flex; }
 
 /* On compare screen, hide the phrase card to make room — phrase comes back on next round */
 body[data-state="compare"] .phrase-card,
@@ -504,4 +515,498 @@ body[data-state="processing-reversed"] .instruction { opacity: 0.7; }
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   FEATURE: STATS STRIP (lifetime stats below tagline)
+   ============================================================ */
+.stats-strip {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  background: white;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  padding: 8px 18px;
+  align-self: center;
+  box-shadow: 4px 4px 0 var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: -8px;
+}
+.stats-strip .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.stats-strip .stat-icon { font-size: 15px; }
+.stats-strip .stat-lbl { color: #666; font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stats-strip .stat:not(:last-child)::after {
+  content: '·';
+  margin-left: 14px;
+  color: #ccc;
+  font-weight: 900;
+}
+
+/* ============================================================
+   FEATURE: DIFFICULTY SELECTOR
+   ============================================================ */
+.difficulty-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.difficulty-label {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.difficulty-pills {
+  display: inline-flex;
+  background: white;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: 4px 4px 0 var(--ink);
+  gap: 2px;
+}
+.diff-pill {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  color: var(--ink);
+  transition: background .15s ease, transform .12s ease, color .15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.diff-pill:hover { transform: scale(1.05); }
+.diff-pill.active {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+/* Level badge on phrase card */
+.level-badge {
+  display: inline-block;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+.level-badge.badge-easy   { background: #22c55e; color: white; }
+.level-badge.badge-medium { background: var(--yellow); color: var(--ink); }
+.level-badge.badge-hard   { background: var(--red); color: white; }
+.level-badge.badge-pro    { background: var(--ink); color: var(--yellow); }
+
+/* ============================================================
+   FEATURE: SPEED SELECTOR
+   ============================================================ */
+.speed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.speed-label {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.speed-pills {
+  display: inline-flex;
+  background: white;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: 4px 4px 0 var(--ink);
+  gap: 2px;
+}
+.speed-pill {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: var(--ink);
+  transition: background .15s ease, transform .12s ease, color .15s ease;
+}
+.speed-pill:hover { transform: scale(1.05); }
+.speed-pill.active {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+/* ============================================================
+   FEATURE: SCORE REVEAL (compare screen)
+   ============================================================ */
+.score-reveal {
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 24px 22px;
+  background: white;
+  border: var(--border-thick);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  transform: rotate(-1deg);
+  animation: scoreEnter 0.5s cubic-bezier(.2,1.5,.4,1) both;
+}
+@keyframes scoreEnter {
+  from { opacity: 0; transform: rotate(-1deg) scale(0.85); }
+  to   { opacity: 1; transform: rotate(-1deg) scale(1); }
+}
+.score-bg {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  z-index: 2;
+}
+.score-number {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: clamp(64px, 16vw, 96px);
+  line-height: 1;
+  color: var(--ink);
+  text-shadow:
+    3px 3px 0 var(--yellow),
+    6px 6px 0 var(--red);
+  transition: transform .2s ease;
+}
+.score-out {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: clamp(20px, 4vw, 28px);
+  color: #888;
+}
+.score-label {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: clamp(20px, 5vw, 26px);
+  color: var(--ink);
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 6px 16px;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  margin-top: 6px;
+}
+/* Color the score label by tier */
+.score-reveal[data-tier="1"] .score-label { background: #FFB3B3; }
+.score-reveal[data-tier="2"] .score-label { background: var(--yellow); }
+.score-reveal[data-tier="3"] .score-label { background: var(--green); color: white; }
+.score-reveal[data-tier="4"] .score-label { background: var(--blue);  color: white; }
+.score-reveal[data-tier="5"] .score-label { background: var(--pink);  color: white; animation: legendaryPulse 0.8s ease infinite; }
+@keyframes legendaryPulse {
+  0%, 100% { transform: scale(1) rotate(-1deg); }
+  50%      { transform: scale(1.06) rotate(1deg); }
+}
+
+/* Confetti dots for high scores */
+.score-confetti {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+}
+.score-confetti span {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  opacity: 0;
+}
+.score-reveal[data-tier="4"] .score-confetti span,
+.score-reveal[data-tier="5"] .score-confetti span {
+  animation: confettiPop 1.4s ease-out forwards;
+}
+@keyframes confettiPop {
+  0%   { opacity: 1; transform: translate(0,0) scale(0.5); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.2); }
+}
+
+/* ============================================================
+   FEATURE: COMPARE ACTIONS (New phrase + Hall of Fame buttons)
+   ============================================================ */
+.compare-actions {
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+}
+.btn-hof {
+  background: var(--pink);
+  color: white;
+  font-size: clamp(16px, 4vw, 20px);
+  padding: 14px 28px;
+  max-width: 320px;
+}
+.btn-hof:hover { background: var(--pink-deep); }
+
+/* Footer actions */
+.footer-actions {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   FEATURE: HALL OF FAME MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26, 26, 26, 0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: overlayFade 0.25s ease-out;
+}
+@keyframes overlayFade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--cream);
+  border: var(--border-thick);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 26px 22px 22px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalIn 0.35s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 10;
+  width: 36px; height: 36px;
+  background: var(--red);
+  color: white;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform .12s ease;
+}
+.modal-close:hover { transform: scale(1.1) rotate(90deg); }
+.modal-close:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+
+.modal-title {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: clamp(28px, 7vw, 38px);
+  color: var(--ink);
+  text-align: center;
+  margin-bottom: 18px;
+  text-shadow: 3px 3px 0 var(--yellow);
+  transform: rotate(-1.5deg);
+  display: inline-block;
+  width: 100%;
+}
+
+.hof-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.hof-stat-card {
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 12px 8px;
+  text-align: center;
+}
+.hof-stat-card.hof-blue   { background: var(--blue);   color: white; }
+.hof-stat-card.hof-yellow { background: var(--yellow); }
+.hof-stat-card.hof-green  { background: var(--green);  color: white; }
+.hof-stat-card.hof-pink   { background: var(--pink);   color: white; }
+.hof-stat-num {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: 28px;
+  line-height: 1;
+}
+.hof-stat-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  opacity: 0.92;
+}
+
+.hof-section-title {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: 18px;
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--ink);
+}
+.hof-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.hof-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 10px 12px 10px 14px;
+}
+.hof-rank {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: 28px;
+  width: 36px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.hof-entry-mid {
+  flex: 1;
+  min-width: 0;
+}
+.hof-entry-phrase {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hof-entry-meta {
+  font-size: 12px;
+  color: #777;
+  margin-top: 2px;
+}
+.hof-entry-score {
+  font-family: 'Bagel Fat One', cursive;
+  font-size: 22px;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+.hof-play-btn {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  background: var(--green);
+  color: white;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  font-size: 16px;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: transform .12s ease;
+}
+.hof-play-btn:hover { transform: scale(1.1); }
+.hof-play-btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.hof-play-btn.is-playing { background: var(--red); animation: playingWiggle 0.5s ease infinite; }
+.hof-empty {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+  font-style: italic;
+}
+.hof-clear-btn {
+  display: block;
+  margin: 0 auto;
+  color: var(--red-deep);
+  font-size: 13px;
+}
+
+/* ============================================================
+   FEATURE: TTS BUTTON (inside phrase card)
+   ============================================================ */
+.tts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 8px 18px;
+  background: var(--ink);
+  color: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+  transition: transform .12s ease, box-shadow .12s ease, background .15s ease;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+}
+.tts-btn:hover { transform: translate(-1px, -1px) scale(1.04); box-shadow: 4px 4px 0 rgba(0,0,0,0.3); background: #333; }
+.tts-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+.tts-btn.is-speaking { background: var(--green-deep); animation: speakPulse 0.9s ease-in-out infinite; }
+@keyframes speakPulse {
+  0%, 100% { box-shadow: 3px 3px 0 rgba(0,0,0,0.25); }
+  50%      { box-shadow: 3px 3px 8px rgba(31, 203, 122, 0.5); }
+}
+.tts-icon { font-size: 1.15em; }
+
+/* TTS compare row highlight */
+.compare-row-tts { background: #f3eaff; border-color: #7c3aed; }
+.compare-row-tts .compare-heading { color: #7c3aed; }
+
+/* Purple play button for TTS */
+.play-purple { background: #7c3aed; color: white; }
+
+/* Single-button compare row */
+.compare-buttons-single {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  max-width: 540px;
+}
+
+/* Mobile tweaks for new components */
+@media (max-width: 480px) {
+  .stats-strip { font-size: 12.5px; padding: 6px 12px; }
+  .stats-strip .stat-lbl { font-size: 10.5px; }
+  .speed-bar { gap: 10px; }
+  .speed-label { font-size: 12px; }
+  .speed-pill { padding: 6px 11px; font-size: 13px; }
+  .modal { padding: 22px 16px 16px; }
+  .hof-stat-num { font-size: 24px; }
+  .hof-rank { font-size: 24px; width: 28px; }
+  .hof-entry-phrase { font-size: 13px; }
+  .hof-entry-score { font-size: 18px; padding: 3px 8px; }
 }

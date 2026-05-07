@@ -6,14 +6,20 @@ Built with vanilla HTML / CSS / JS — no build step, no dependencies, ~zero kil
 
 ## How it works
 
-1. Game shows a random 5–6 word phrase from `phrases.js` (~400 curated phrases — add more freely).
+1. Game shows a random 5–6 word phrase from `phrases.js` (~460 curated phrases — add more freely).
 2. You hit **🎤 Tap to record** and say the phrase.
-3. The recording is reversed in-browser using the Web Audio API. You can replay both the original and the reversed (target) sound as many times as you want.
+3. The recording is reversed in-browser using the Web Audio API. You can replay both the original and the reversed (target) sound at **½× / 1× / 2× speed**.
 4. You hit record again and try to *say it backwards*.
-5. The game reverses *your reversed attempt* back to forward — and shows you all four playbacks side-by-side so you can hear how close you got to the original phrase.
-6. Tap **🎲 New phrase** to play forever.
+5. The game reverses *your reversed attempt* back to forward, scores you against the original, and shows all four playbacks plus a **🎯 Closeness Score (0–100)** with confetti for high scores.
+6. Tap **🎲 New phrase** to play forever. Your top 3 attempts are saved to the **🏆 Hall of Fame**.
 
-Spacebar also toggles record / stop on desktop.
+Spacebar also toggles record / stop on desktop. Esc closes the Hall of Fame modal.
+
+## Features
+
+- **🎯 Closeness Score** — 0–100 score after each attempt, comparing duration + energy envelope of your un-reversed attempt vs the original. Tier labels go from 🥶 Brain freeze to 🌟 LEGENDARY (with confetti).
+- **🐢 Speed control** — playback toggles between ½×, 1× and 2×. Slow it down to learn the reversed sound, speed it up for chaos.
+- **🏆 Hall of Fame + Stats** — lifetime stats (plays, average, best score, current/longest streak) and your top 3 attempts (with audio replay) saved to `localStorage`.
 
 ## Run locally
 
@@ -53,24 +59,25 @@ No `vercel.json` needed — Vercel auto-detects static sites. The free Hobby tie
 reverse-voice-game/
 ├── index.html      ← markup + state-driven UI
 ├── styles.css      ← playful arcade styling (Bagel Fat One + Fredoka)
-├── app.js          ← game state machine, recording, audio reversal
-├── phrases.js      ← ~400 curated 5–6 word phrases (edit freely)
+├── app.js          ← state machine, recording, reversal, scoring, HoF
+├── phrases.js      ← ~460 curated 5–6 word phrases (edit freely)
 └── README.md
 ```
 
 ## Adding more phrases
 
-Just open `phrases.js` and add strings to the `PHRASES` array. Anything 4–7 words works fine — 5–6 is the sweet spot for the game.
+Open `phrases.js` and append strings to the `PHRASES` array. Anything 4–7 words works fine — 5–6 is the sweet spot.
 
 ## Browser support
 
-Works in any modern browser that supports `MediaRecorder` + Web Audio API:
+Works in any modern browser that supports `MediaRecorder` + Web Audio API + `localStorage`:
 Chrome, Firefox, Edge, Safari (14.1+), and mobile equivalents.
 
 ## Tech notes
 
-- Audio reversal: decode the recorded blob with `AudioContext.decodeAudioData`, build a new `AudioBuffer` with samples in reverse order per channel, then re-encode to a 16-bit PCM WAV blob (so it plays back in a regular `<audio>` element via a blob URL).
-- State machine: a `data-state` attribute on `<body>` drives all UI visibility through `[class*="show-on-"]` CSS rules. No frameworks needed.
-- Mobile-friendly: tap targets sized for thumbs, viewport locked, microphone permissions requested only on first record tap.
+- **Audio reversal:** decode the recorded blob with `AudioContext.decodeAudioData`, build a new `AudioBuffer` with samples in reverse order per channel, then re-encode to a 16-bit PCM WAV blob (so it plays back via a normal `<audio>` element + blob URL).
+- **Scoring algorithm:** trims silence from both clips, compares (1) duration ratio and (2) normalized RMS energy envelope across 24 time windows. Combined raw score is curved with `Math.pow(raw, 0.65)` so attempts feel rewarded.
+- **Persistence:** `localStorage` under key `reverse-a-phone-v1`. Hall of Fame audio is stored as base64-encoded original webm/opus (small) — reversed on the fly during playback.
+- **State machine:** a `data-state` attribute on `<body>` drives all UI visibility through `[class*="show-on-"]` CSS rules. No frameworks needed.
 
 Have fun. 🎤🔁

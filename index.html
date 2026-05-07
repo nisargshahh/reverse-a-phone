@@ -30,15 +30,48 @@
       <p class="tagline">say it · hear it backwards · <em>say it backwards</em> · how close did you get?</p>
     </header>
 
+    <!-- DIFFICULTY SELECTOR -->
+    <div class="difficulty-bar" id="difficultyBar">
+      <span class="difficulty-label">difficulty</span>
+      <div class="difficulty-pills" role="group" aria-label="Difficulty level">
+        <button class="diff-pill diff-easy"   data-level="easy"   id="diffEasy">🟢 Easy</button>
+        <button class="diff-pill diff-medium" data-level="medium" id="diffMedium">🟡 Medium</button>
+        <button class="diff-pill diff-hard"   data-level="hard"   id="diffHard">🔴 Hard</button>
+        <button class="diff-pill diff-pro active"    data-level="pro"    id="diffPro">🏆 Pro</button>
+      </div>
+    </div>
+
+    <!-- STATS STRIP (revealed after first scored attempt) -->
+    <div class="stats-strip" id="statsStrip" hidden>
+      <span class="stat"><span class="stat-icon">🎮</span> <span id="statTotal">0</span> <span class="stat-lbl">plays</span></span>
+      <span class="stat"><span class="stat-icon">📊</span> <span id="statAvg">0</span> <span class="stat-lbl">avg</span></span>
+      <span class="stat"><span class="stat-icon">🌟</span> <span id="statBest">0</span> <span class="stat-lbl">best</span></span>
+      <span class="stat"><span class="stat-icon">🔥</span> <span id="statStreak">0</span> <span class="stat-lbl">streak</span></span>
+    </div>
+
     <!-- PHRASE CARD -->
     <section class="phrase-card" id="phraseCard">
+      <span class="level-badge badge-pro" id="levelBadge">🏆 Pro</span>
       <span class="phrase-label">your phrase</span>
       <h2 class="phrase" id="phraseText">…</h2>
+      <button class="tts-btn" id="btnTTS" title="Hear the phrase spoken aloud">
+        <span class="tts-icon">🔊</span> hear it spoken
+      </button>
     </section>
 
     <!-- INSTRUCTION BAR (changes per stage) -->
     <div class="instruction" id="instruction">
       Tap the big red button and say your phrase clearly!
+    </div>
+
+    <!-- SPEED SELECTOR (visible during playback states) -->
+    <div class="speed-bar show-on-practice show-on-compare" id="speedBar">
+      <span class="speed-label">playback speed</span>
+      <div class="speed-pills" role="group" aria-label="Playback speed">
+        <button class="speed-pill" data-speed="0.5">🐢 ½×</button>
+        <button class="speed-pill active" data-speed="1">1×</button>
+        <button class="speed-pill" data-speed="2">🐇 2×</button>
+      </div>
     </div>
 
     <!-- CONTROLS (state-driven via [data-state] on body) -->
@@ -71,8 +104,31 @@
         </button>
       </div>
 
+      <!-- SCORE REVEAL — appears at top of compare screen -->
+      <div class="score-reveal show-on-compare" id="scoreReveal">
+        <div class="score-bg">
+          <div class="score-number" id="scoreNumber">0</div>
+          <div class="score-out">/100</div>
+        </div>
+        <div class="score-label" id="scoreLabel">analyzing…</div>
+        <div class="score-confetti" id="scoreConfetti" aria-hidden="true"></div>
+      </div>
+
       <!-- Stage 5: compare — all four playback panels -->
       <div class="compare-grid show-on-compare">
+        <div class="compare-row compare-row-tts">
+          <h3 class="compare-heading">🔊 TTS reference</h3>
+          <div class="compare-buttons compare-buttons-single">
+            <button class="play-btn play-purple" id="btnTTSCompare">
+              <span class="play-icon">🔊</span>
+              <span class="play-label">hear the phrase<br><em>← correct pronunciation</em></span>
+            </button>
+            <button class="play-btn play-pink" data-play="reversedAttemptReversed">
+              <span class="play-icon">✨</span>
+              <span class="play-label">your re-reversed<br><em>← how close?!</em></span>
+            </button>
+          </div>
+        </div>
         <div class="compare-row">
           <h3 class="compare-heading">Round 1: the original</h3>
           <div class="compare-buttons">
@@ -101,11 +157,17 @@
         </div>
       </div>
 
-      <!-- Big new phrase button on compare screen -->
-      <button class="btn btn-new-big show-on-compare" id="btnNewPhraseBig">
-        <span class="btn-icon">🎲</span>
-        <span class="btn-label">New phrase!</span>
-      </button>
+      <!-- Big new phrase + Hall of Fame buttons on compare screen -->
+      <div class="compare-actions show-on-compare">
+        <button class="btn btn-new-big" id="btnNewPhraseBig">
+          <span class="btn-icon">🎲</span>
+          <span class="btn-label">New phrase!</span>
+        </button>
+        <button class="btn btn-hof" id="btnHofOpen">
+          <span class="btn-icon">🏆</span>
+          <span class="btn-label">Hall of Fame</span>
+        </button>
+      </div>
 
       <!-- Processing overlay -->
       <div class="processing show-on-processing-original show-on-processing-reversed">
@@ -117,9 +179,14 @@
 
     <!-- FOOTER -->
     <footer class="footer">
-      <button class="btn-text show-on-ready show-on-practice" id="btnNewPhraseSmall">
-        🎲 skip this one →
-      </button>
+      <div class="footer-actions">
+        <button class="btn-text show-on-ready show-on-practice" id="btnNewPhraseSmall">
+          🎲 skip this one →
+        </button>
+        <button class="btn-text show-on-ready show-on-practice" id="btnHofOpenFooter">
+          🏆 hall of fame
+        </button>
+      </div>
       <p class="hint show-on-ready">
         💡 say it clearly and a little slower than usual — it makes the reversed sound easier to mimic
       </p>
@@ -129,6 +196,40 @@
     <div class="error-banner" id="errorBanner" hidden></div>
 
   </main>
+
+  <!-- HALL OF FAME MODAL -->
+  <div class="modal-overlay" id="hofModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="hofTitle">
+      <button class="modal-close" id="hofClose" aria-label="Close">✕</button>
+      <h2 class="modal-title" id="hofTitle">🏆 Hall of Fame</h2>
+
+      <div class="hof-stats-grid">
+        <div class="hof-stat-card hof-blue">
+          <div class="hof-stat-num" id="hofTotalPlays">0</div>
+          <div class="hof-stat-lbl">total plays</div>
+        </div>
+        <div class="hof-stat-card hof-yellow">
+          <div class="hof-stat-num" id="hofAvgScore">0</div>
+          <div class="hof-stat-lbl">average</div>
+        </div>
+        <div class="hof-stat-card hof-green">
+          <div class="hof-stat-num" id="hofBestScore">0</div>
+          <div class="hof-stat-lbl">best ever</div>
+        </div>
+        <div class="hof-stat-card hof-pink">
+          <div class="hof-stat-num" id="hofLongestStreak">0</div>
+          <div class="hof-stat-lbl">longest streak</div>
+        </div>
+      </div>
+
+      <h3 class="hof-section-title">Top 3 attempts</h3>
+      <div class="hof-list" id="hofList">
+        <p class="hof-empty">🎤 No saved attempts yet — go play a round!</p>
+      </div>
+
+      <button class="btn-text hof-clear-btn" id="hofClear">🗑 clear all data</button>
+    </div>
+  </div>
 
   <script src="phrases.js"></script>
   <script src="app.js"></script>
