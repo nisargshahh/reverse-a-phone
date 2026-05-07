@@ -103,7 +103,7 @@
   };
 
   let storeData = Storage.load();
-  function persist() { Storage.save(storeData); }
+  function persist() { return Storage.save(storeData); }
 
   // ===========================================================
   //  STATS — lifetime counts + streak
